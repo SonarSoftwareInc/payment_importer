@@ -21,6 +21,13 @@ The format of the CSV file is as follows:
 `Sonar Account ID, Payment Amount, Payment Date/Time in RFC 3339 format (e.g. 2017-06-23T20:39:16+00:00) or empty to use the current date/time, Payment Reference (can be blank/empty).`
 
 For example, a valid line would be:
-1,12.93,,"Check Number 12345"
+
+`1,12.93,,"Check Number 12345"`
 
 This would import a payment to account ID 1 for 12.93, with a payment reference of `Check Number 12345`.
+
+Another valid example would be:
+
+`5,32.34,2017-06-23T20:39:16+00:00,`
+
+This would import a payment for 32.34, with a date and time of 2017-06-23 20:39:16 (UTC), and no payment reference.
