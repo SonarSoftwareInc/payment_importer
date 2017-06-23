@@ -13,6 +13,10 @@ class ComposerStaticInitea9ea88e4d8ebfc81d6e2bbc373f4f98
     );
 
     public static $prefixLengthsPsr4 = array (
+        'S' => 
+        array (
+            'SonarSoftware\\PaymentImporter\\' => 30,
+        ),
         'P' => 
         array (
             'Psr\\Http\\Message\\' => 17,
@@ -30,6 +34,10 @@ class ComposerStaticInitea9ea88e4d8ebfc81d6e2bbc373f4f98
     );
 
     public static $prefixDirsPsr4 = array (
+        'SonarSoftware\\PaymentImporter\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src',
+        ),
         'Psr\\Http\\Message\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/http-message/src',

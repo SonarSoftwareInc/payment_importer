@@ -1,6 +1,16 @@
 {
+    "name": "sonarsoftware/payment_importer",
+    "description": "Sonar payment importing tool.",
+    "keywords": ["sonar","sonar software","sonar api","sonar software api","sonar payment importer"],
+    "homepage": "https://sonar.software",
+    "license": "MIT",
     "require": {
         "guzzlehttp/guzzle": "^6.3",
         "vlucas/phpdotenv": "^2.4"
+    },
+    "autoload": {
+        "psr-4" : {
+            "SonarSoftware\\PaymentImporter\\" : "src"
+        }
     }
 }
