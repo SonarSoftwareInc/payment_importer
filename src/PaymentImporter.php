@@ -15,12 +15,13 @@ class PaymentImporter
      * Sonar Account ID, Payment Amount, Payment Date/Time in RFC 3339 format (e.g. 2017-06-23T20:39:16+00:00) or empty to use the current date/time, Payment Reference (can be blank/empty).
      * All columns must exist. If you don't want to submit a date and reference, an example of the format would be 1,12.43,,
      * @param $pathToCsv
+     * @return array
      */
     public function importPayments($pathToCsv)
     {
         $this->validateFileExists($pathToCsv);
         $this->validateFileContents($pathToCsv);
-        $results = $this->importPaymentsToSonar($pathToCsv);
+        return $this->importPaymentsToSonar($pathToCsv);
     }
 
     /**
