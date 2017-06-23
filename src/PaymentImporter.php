@@ -58,6 +58,10 @@ class PaymentImporter
         if (($handle = fopen($pathToCsv, "r")) !== FALSE) {
             while (($data = fgetcsv($handle, 1000, ",")) !== FALSE)
             {
+                if (count($data) < 4)
+                {
+                    throw new InvalidArgumentException("Row $row does not have sufficient columns, there are only " . count($data) . " columns, and there should be 4.");
+                }
                 if (!ctype_digit($data[0]))
                 {
                     throw new InvalidArgumentException("The account ID on row $row is not a number.");
