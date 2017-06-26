@@ -5,6 +5,9 @@ namespace SonarSoftware\PaymentImporter;
 use Carbon\Carbon;
 use Dotenv\Dotenv;
 use Exception;
+use GuzzleHttp\Client;
+use GuzzleHttp\Pool;
+use GuzzleHttp\Psr7\Request;
 use InvalidArgumentException;
 
 class PaymentImporter
@@ -37,6 +40,8 @@ class PaymentImporter
 
         $failureLog = tempnam(sys_get_temp_dir(),"failures");
         $successLog = tempnam(sys_get_temp_dir(),"successes");
+        $failureLogHandle = fopen($failureLog,"w");
+        $successLogHandle = fopen($successLog, "w");
 
         $results = [
             'successes' => 0,
@@ -44,6 +49,82 @@ class PaymentImporter
             'failure_log' => $failureLog,
             'success_log' => $successLog,
         ];
+
+        $mapping = [];
+
+        $requests = function () use ($pathToCsv, $mapping)
+        {
+            if (($handle = fopen($pathToCsv, "r")) !== FALSE)
+            {
+                while (($data = fgetcsv($handle, 1000, ",")) !== FALSE)
+                {
+                    $mapping[] = $data;
+                    if ($data[2])
+                    {
+                        $carbon = new Carbon($data[2]);
+                        $date = $carbon->toDateString();
+                    }
+                    else
+                    {
+                        $date = null;
+                    }
+
+                    yield new Request("POST", getenv("SONAR_URL") . "/api/v1/accounts/" . (int)$data[0] . "/transactions/payments", [
+                            'Content-Type' => 'application/json; charset=UTF8',
+                            'timeout' => 30,
+                            'Authorization' => 'Basic ' . base64_encode(getenv("SONAR_USERNAME") . ':' . getenv("SONAR_PASSWORD")),
+                        ]
+                        , json_encode([
+                            'payment_method' => 'other',
+                            'reference' => $data[3],
+                            'amount' => (float)$data[1],
+                            'date' => $date,
+                        ]));
+                }
+            }
+        };
+
+        $client = new Client();
+        $pool = new Pool($client, $requests(), [
+            'concurrency' => 10,
+            'fulfilled' => function ($response, $index) use (&$returnData, $successLogHandle, $failureLogHandle, $mapping)
+            {
+                $statusCode = $response->getStatusCode();
+                if ($statusCode > 201)
+                {
+                    $body = json_decode($response->getBody()->getContents());
+                    $line = $mapping[$index];
+                    array_push($line,$body);
+                    fputcsv($failureLogHandle,$line);
+                    $returnData['failures'] += 1;
+                }
+                else
+                {
+                    $returnData['successes'] += 1;
+                    fwrite($successLogHandle,"Payment submission succeeded for account ID {$mapping[$index][0]} for {$mapping[$index][1]}" . "\n");
+                }
+            },
+            'rejected' => function($reason, $index) use (&$returnData, $failureLogHandle, $mapping)
+            {
+                $response = $reason->getResponse();
+                if ($response !== null)
+                {
+                    $body = json_decode($response->getBody()->getContents());
+                    $returnMessage = implode(", ",(array)$body->error->message);
+                }
+                else
+                {
+                    $returnMessage = "No response from Sonar instance.";
+                }
+                $line = $mapping[$index];
+                array_push($line,$returnMessage);
+                fputcsv($failureLogHandle,$line);
+                $returnData['failures'] += 1;
+            }
+        ]);
+
+        $promise = $pool->promise();
+        $promise->wait();
 
         return $results;
     }
